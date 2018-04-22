@@ -3,8 +3,11 @@ import merkle
 from wsgiref.simple_server import make_server
 import json
 import re
+import os
 
-mtree = merkle.Merkle("../test_data/extract.csv")
+test_data = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../test_data/extract.csv")
+
+mtree = merkle.Merkle(test_data)
 
 def not_found(env, rs, obj):
     status = "404 Not Found"

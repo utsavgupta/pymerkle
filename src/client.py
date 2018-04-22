@@ -2,10 +2,11 @@ import merkle
 import requests
 import hashlib
 import json
+import os
 
 SERVER_URL = "http://localhost:8080"
 HASH_API = SERVER_URL + "/hash"
-SAMPLE_DATASET = "../test_data/extract.csv"
+SAMPLE_DATASET = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../test_data/extract.csv")
 
 def get_index(size):
     
