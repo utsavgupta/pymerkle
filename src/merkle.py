@@ -5,11 +5,8 @@ class Merkle(object):
     def __init__(self, path, h = None):
 
         # Keeping the hash function configurable, this would also help in testing
-        if h is None:
-            self._h = self._sha256_digest
-        else:
-            self._h = h
-        
+        self._h = self._sha256_digest if h is None else h 
+            
         f = open(path, "r")
         self._hashes = map(self._h, [str(a) + b for a, b in enumerate([line[:-1] for line in f.readlines()])])
         f.close()
