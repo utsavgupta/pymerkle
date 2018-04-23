@@ -13,7 +13,7 @@ def test_inclusion_of_lines(mtree, test_data):
 
 def test_leaf_position(mtree, test_data):
     for linum, line in enumerate(test_data):
-        assert(mtree._index[str(linum) + line] == len(test_data) + linum - 1)
+        assert(mtree._index[str(linum) + line] == linum)
 
 def test_root_hash(mtree, test_data):
     expected_hashes = [str(linum) + line for linum, line in enumerate(test_data)]
