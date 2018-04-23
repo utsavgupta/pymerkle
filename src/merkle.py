@@ -11,15 +11,17 @@ class Merkle(object):
         self._hashes = map(self._h, [str(a) + b for a, b in enumerate([line[:-1] for line in f.readlines()])])
         f.close()
         
-        offset = len(self._hashes) - 1
-        self._index = dict(zip(self._hashes, range(0 + offset, len(self._hashes) + offset)))
+        self._index = dict(zip(self._hashes, range(0, len(self._hashes))))
 
-        self._tree = self._generate_merkle_tree(self._hashes, self._hashes)
+        self._tree = self._generate_merkle_tree(self._hashes, [self._hashes])
 
     @property
     def tree(self):
         """
-           Return the array representation of the Merkle tree (full binary hash tree)
+           Return the array representation of the Merkle tree.
+
+           It returns a two dimensional array each row representing the corresponding
+           level of the tree.
         """
         
         return self._tree
@@ -34,7 +36,7 @@ class Merkle(object):
         if(len(self._tree) < 1):
             None
         else:
-            return self._tree[0]
+            return self._tree[0][0]
 
     def _sha256_digest(self, datum):
         """
@@ -76,42 +78,46 @@ class Merkle(object):
         """
            Generates and returns the array representation of the Merkle tree.
 
-           Where the element at the 0th position is the root element, has it's left child at 1 and right at 2.
-           
-           For the node n at postion N, the left child is stored at index (2 * N) + 1 and the right child is 
-           stored at index (2 * N) + 2.
-           
-           The function is designed to handle fill binary trees. Ie the number of elements to be added to the
-           tree can only be 0,2,4,8,16 .. 2^n
+           Where the element at the 0th position of row 0 is the root element,
+           and has it's left child at (1,0) and right at (1,1).
            
            Example:
               __generate_merkle_tree([h(a), h(b), h(c), h(d)])
            
-              [h(h(h(a) + h(b)) + h(h(c) + h(d))), h(h(a) + h(b)), h(h(c) + h(d)), h(a), h(b), h(c), h(d)] 
+              [[h(h(h(a) + h(b)) + h(h(c) + h(d)))], [h(h(a) + h(b)), h(h(c) + h(d))], [h(a), h(b), h(c), h(d)]] 
         """
-    
+
+        if(self._is_odd(len(curr))):
+           curr.append(curr[-1])
+           
         hash_pairs = [(curr[i], curr[i + 1]) for i in xrange(0, len(curr) - 1, 2)]
         parents = map(self._merge_pair, hash_pairs)
-
+        children.insert(0, parents)
+        
         if(len(parents) < 2):
-            return parents + children
+            return children
         else:
-            return self._generate_merkle_tree(parents, parents + children)
+            return self._generate_merkle_tree(parents, children)
     
-    def _merkle_path(self, index, partial_path):
+    def _merkle_path(self, rindex, cindex, partial_path):
         """
            Generates the Merkle path from the given index.
         """
         
-        if index == 0 :
+        if rindex == 0 :
             return partial_path
         else:
-            if(self._is_odd(index)):
-                partial_path.append("1" + self.tree[index + 1])
-                return self._merkle_path((index - 1) / 2, partial_path)
+            if cindex > 0:
+                parent_cindex = (cindex - 1 if self._is_odd(cindex) else cindex) / 2
             else:
-                partial_path.append("0" + self.tree[index - 1])
-                return self._merkle_path((index - 2) / 2, partial_path)
+                parent_cindex = 0
+            
+            if(self._is_odd(cindex)):
+                partial_path.append("0" + self.tree[rindex][cindex - 1])
+            else:
+                partial_path.append("1" + self.tree[rindex][cindex + 1])
+
+            return self._merkle_path(rindex - 1, parent_cindex, partial_path)
 
     def merkle_path(self, hash_value):
         """
@@ -122,4 +128,4 @@ class Merkle(object):
         if hash_value not in self._index.keys():
             return None
         else:
-            return self._merkle_path(self._index[hash_value], [])
+            return self._merkle_path(len(self._tree) - 1, self._index[hash_value], [])
